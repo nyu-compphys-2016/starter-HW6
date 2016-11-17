@@ -1,0 +1,75 @@
+\documentclass{article}
+\usepackage{listings,amsmath}
+\usepackage{hyperref}
+
+%Listings Settings
+\lstset{frame=tb,
+language=python,
+aboveskip=3mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\ttfamily}
+}
+
+%Custom Commands
+\newcommand{\git}{{\texttt{git}}}
+\newcommand{\github}{{\texttt{Github}}}
+\newcommand{\Python}{{\texttt{Python}}}
+\newcommand{\python}{{\texttt{python}}}
+\newcommand{\Anaconda}{{\texttt{Anaconda}}}
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+\newcommand{\ket}[1]{\left |#1\right \rangle}  
+\newcommand{\bra}[1]{\left \langle #1\right |}  
+\newcommand{\braket}[2]{\left \langle #1 \vert #2 \right \rangle}
+
+\begin{document}
+
+\begin{center}
+
+\vspace*{-2.5cm}
+\LARGE
+\bf{Homework 6}
+\vspace{1cm}
+
+\large{Due: Nov. 23, 2016}
+\vspace{1cm}
+
+\end{center}
+
+In \Python{}, write a 1D hydrodynamics code!  Follow the ``How to write a Hydro Code'' guide at \url{https://github.com/nyu-compphys-2016/howToWriteAHydroCode}.
+
+\begin{enumerate}
+	\item {\bf First Order - Shocks} 
+		Write a first order code following Section 2 of ``How to write a Hydro Code.'' As a test problem, compute the Sod shock tube.  Do a convergence test on the Sod by varying the number of grid cells $N_x$, show the code is indeed first order.
+	\item {\bf ``High'' Order - Waves} 
+		Make your code high order (second order in space, third order in time) by following Section 3 of  ``How to write a Hydro Code.''  Repeat the convergence test with the Sod problem, due to the discontinuities the code is still first order on this problem.  A smooth solution is the \emph{isentropic wave}.  The initial conditions for an isentropic wave are:
+		\begin{align}
+			\rho(x) &= \rho_0 \left( 1 + \alpha f(x) \right) \\
+			P(x) &= P_0 \left(\frac{\rho}{\rho_0}\right)^\gamma \\
+			v(x) &= \frac{2}{\gamma-1} \left( c_s - c_{s,0} \right) \ ,
+		\end{align}
+		where:
+		\begin{equation}
+			c_s = \sqrt{\frac{\gamma P}{\rho}} \ , \qquad c_{s,0} = \sqrt{\frac{\gamma P_0}{\rho_0}} \ .
+		\end{equation}
+		For an initial wave profile, use:
+		\begin{equation}
+			f(x) = \left \{ \begin{matrix} 
+						1-\left(\frac{x-x_0}{\sigma}\right)^4 & |x-x_0| < \sigma \\
+						0 & \text{otherwise}
+					\end{matrix} \right . \ .
+		\end{equation}
+		Run this problem on the domain $x \in [0,2]$ with the parameters: $\rho_0 = 1$, $P_0=0.6$, $\gamma=5/3$, $\alpha=0.2$, $x_0=0.5$, and $\sigma=0.4$.  
+		These waves eventually steepen into shocks, but for short times remain smooth.  To compute the error, check that the specific entropy $s$ remains constant:
+		\begin{align}
+			L_1(t) & = \int_0^2 |s(x,t) - s_0| \diff x \ , \\
+			s(x,t)-s_0 &= \frac{1}{\gamma-1} \log \left[\frac{P(x,t)}{P_0} \left(\frac{\rho(x,t)}{\rho_0}\right)^{-\gamma}\right]
+		\end{align}
+		Perform a convergence test with this error measure, and demonstrate the code is second order accurate.
+\end{enumerate}
+
+Write a report summarizing your work, showing all plots, giving your results, and discussing the questions.  Include the report \texttt{.tex} file and all Python files in the repo.  Also include either the \texttt{.pdf} version of the report, or all figures necessary to compile it from the \texttt{.tex} file.
+
+\end{document}
