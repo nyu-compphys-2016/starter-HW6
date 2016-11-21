@@ -1,0 +1,116 @@
+\documentclass{article}
+\usepackage{listings,amsmath}
+\usepackage{hyperref}
+\usepackage[margin=1.5in]{geometry}
+
+%Listings Settings
+\lstset{frame=tb,
+language=python,
+aboveskip=3mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\ttfamily}
+}
+
+%Custom Commands
+\newcommand{\git}{{\texttt{git}}}
+\newcommand{\github}{{\texttt{Github}}}
+\newcommand{\Python}{{\texttt{Python}}}
+\newcommand{\python}{{\texttt{python}}}
+\newcommand{\Anaconda}{{\texttt{Anaconda}}}
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+\newcommand{\ket}[1]{\left |#1\right \rangle}  
+\newcommand{\bra}[1]{\left \langle #1\right |}  
+\newcommand{\braket}[2]{\left \langle #1 \vert #2 \right \rangle}
+
+\begin{document}
+
+\begin{center}
+
+\vspace*{-2.5cm}
+\LARGE
+\bf{Homework 6 Notes}
+\vspace{1cm}
+
+\large{Due: Nov. 23, 2016}
+\vspace{1cm}
+
+\end{center}
+
+\section{Computing Errors}
+
+When your numerical scheme is solving for a function $f(x)$ instead of a single point like $x(t)$, it may not be obvious at first how to calculate errors or compare to an exact solution.
+
+Fortunately, its a simple extension of the $L_1$ scheme we have already used in the class.  Analytically, your code returns some representation of the solution at time $t$ on the domain $[a,b]$, call it $f_{num}(x;t)$.  There is also of course the exact solution $f_{exact}(x;t)$.  The $L_1$ error of $f_{num}$ is:
+
+\begin{equation}
+	L_1(f_{num}) = \int_a^b \left | f_{num}(x;t) - f_{exact}(x;t) \right | \diff x \ . \label{eq:err}
+\end{equation}
+
+This is a special case of the $p$-norm, which is written:
+\begin{equation}
+	L_p(f,g) = \int_a^b \left | f(x)^p - g(x)^p \right |^{1/p} \diff x \ .
+\end{equation}
+
+In a hydrodynamics code, you are solving for three functions $\rho$, $v$, and $P$. You can calculate the error for any one of them, or for a combination like the entropy $s = s(\rho, P)$.  
+
+How you compute the integral \eqref{eq:err} with your numerical data depends on your scheme.  For our hydrodynamics code, the grid is separated into $N_x$ cells of width $\Delta x = (b-a) / N_x$. The boundaries between cells are at $x_{i+1/2} = a+ i \Delta x$, where $i=0,\dots,N$.  The cell centres are at $x_i = a+ (i+1/2) \Delta x$, where $i=0, \dots, N-1$.The discrete fluid variables (e.g. $\rho$) are \emph{averages} over each cell:
+
+\begin{equation}
+	\rho_i \equiv \frac{1}{\Delta x}\int_{x_{i-1/2}}^{x_{i+1/2}} \rho(x) \diff x  \ .
+\end{equation}
+
+To second order (the maximum order of this code), this is equivalent to evaluating the variable in the \emph{center} of the cell:
+
+\begin{equation}
+	\rho_i = \rho\left(x_i \right) + \mathcal{O}\left(\Delta x^2\right)\ .
+\end{equation}
+
+Then to the same order, we can calculate the integral \eqref{eq:err} using a centred Riemann sum:
+\begin{equation}
+	L_1(\rho_{num}) = \Delta x \sum_{i=0}^{N-1} \left| \rho_i - \rho_{exact}\left(x_i\right)\right| \ .
+\end{equation}
+For a grid on $[0,1]$ with 10 zones, the cell centres are at $x_i = \{ 0.05, 0.15, \dots, 0.95\}$ and the interfaces at $x_{i+1/2} = \{0,0.1,\dots, 0.9, 1.0 \}$.
+
+\section{Boundary Conditions}
+
+The time evolution for any particular zone $i$ depends on its neighbours $i-1$ and $i+1$ in a first order scheme.  For a second order scheme it also depends on $i-2$ and $i+2$.  This causes trouble for zones $0$, $1$, $N-2$, and $N-1$, as they don't have enough neighbours!  This is the most pragmatic reason to consider the need for boundary conditions.
+
+Most boundary schemes are implemented using \emph{ghost zones}: numerical cells outside the domain of the calculation.  We can keep all the math of previous section, and consider ghost zones by letting the cell index $i = -1,0,1,\dots,N-2,N-1,N$ for one ghost zone or $i = -2,-1,0,\dots,N-1,N,N+1$ for two ghost zones.  In general, for $N_g$ ghost zones, $i=-N_g, \dots, N+N_g-1$.
+
+Ghost zones should not be updated in the same manner as the regular zones. They only exist to provide inputs for the evolution of regular zones. Two common ways to set boundaries are Dirichlet and Neumann.
+
+\subsection{Dirichlet}
+
+For a function $f(x,t)$ on $[a,b]$ Dirichlet boundaries specify $f(a,t)$ and $f(b,t)$ for all $t$. Often these zones are fixed to the initial condition $f(a,t) =f(a,0)$ and $f(b,t) = f(b,0)$.  To do this in a code, simply set your ghost zones initially and never update them.  For the variable $\rho_i$ denote $\rho(x_i,t_n)$ as $\rho_i^n$.  Then fixing to the initial condition would look like:
+\begin{align}
+	\rho_{-2}^n = \rho_{-2}^0\ , \qquad \rho_{-1}^n = \rho_{-1}^0\ , \qquad \rho_{N}^n = \rho_{N}^0\ , \qquad \rho_{N+1}^n = \rho_{N+1}^0
+\end{align}
+
+\subsection{Neumann}
+
+For a function $f(x,t)$ on $[a,b]$ Neumann boundaries specify $\partial_x f(a,t)$ and $\partial_x f(b,t)$ for all $t$. A common choice is to fix $\partial_x f(a,t) = \partial_x f(b,t) = 0$.  This resembles the free end of an oscillating string, and allows waves to freely move out of the domain. It is commonly called \emph{outflow}.  On our grid for the variable $\rho$, to first order we can write the derivative at $x=a$ as:
+\begin{equation}
+	\partial_x \rho(a,t) \approx \frac{\rho(x_0,t) - \rho(x_{-1},t)}{\Delta x} = \frac{\rho_0^n - \rho_{-1}^n}{\Delta x}
+\end{equation}
+For the outflow condition $\partial_x \rho(a,t)=0$ we can rearrange this to find $\rho_{-1}^n$:
+\begin{equation}
+	\rho_{-1}^n = \rho_{0}^n\ .
+\end{equation}
+Similarly at $x=b$:
+\begin{equation}
+	\rho_{N}^n = \rho_{N-1}^n\ .
+\end{equation}
+This is also called the \emph{copy} boundary condition.  For second order outflow, it is sufficient to continue the copying to the other ghost zones.
+\begin{equation}
+	\rho_{-2}^n = \rho_{-1}^n = \rho_{0}^n\qquad \rho_{N+1}^n = \rho_{N}^n = \rho_{N-1}^n
+\end{equation}
+
+Notice for outflow boundaries the ghost zones are still time dependent!  They change with whatever values cells $i=0,N-1$ take, and must be re-calculated every time the interior zones are updated.
+
+
+
+
+\end{document}
