@@ -2,17 +2,13 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-def riemann_f(p, rho, v, P, gamma, A, B, cs):
-    if p <= P:
-        f = 2*cs*(math.pow(p/P,(gamma-1)/(2*gamma))-1.0) / (gamma-1.0)
-        df = 2*cs*math.pow(p/P,-(gamma+1)/(2*gamma)) / (2*gamma*P)
-    else:
-        f = (p-P)*math.sqrt(A / (p+B))
-        df = (1.0 - 0.5*(p-P)/(p+B)) * math.sqrt(A / (p+B))
-    return f, df
-
 def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma, 
                 TOL=1.0e-14, MAX=100):
+    # Returns the solution to the Riemann problem with left state (rhoL,vL,PL),
+    # and right state (rhoR,vR,PR) after a time 'T' on a grid of N cells on
+    # [a,b]. The initial discontinuity is placed at x0.
+    #
+    # Returns: X, rho, v, P
 
     AL = 2.0/((gamma+1.0)*rhoL)
     AR = 2.0/((gamma+1.0)*rhoR)
@@ -123,7 +119,73 @@ def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma,
 
     return X, rho, v, P
 
+def isentropicWave(a, b, N, t, x0, sigma, alpha, gamma, rho0=1.0, P0=1.0,
+                    TOL=1.0e-10):
+    # Returns an isentropic wave, evolved for a time t on a grid of N cells on
+    # [a,b]. The initial wave is centered at x0, has width sigma, and strength
+    # alpha.
+    #
+    # Returns: X, rho, v, P
+
+    dx = (b-a) / float(N)
+    X = a + dx * (np.arange(N) + 0.5)
+
+    def rhoProfile(x, x0, alpha, sigma, rho0):
+        rho = np.empty(x.shape)
+        rho[:] = rho0
+        pulse = np.fabs(x-x0) < 1.0*sigma
+        rho[pulse] += alpha*rho0*np.power(1-np.power((x[pulse]-x0)/sigma,2),2)
+        return rho
+
+    cs0 = math.sqrt(gamma*P0/rho0)
+
+    rhoMax = rho0*(1.0+alpha)
+    PMax = P0*math.pow(rhoMax/rho0, gamma)
+    csMax = math.sqrt(gamma*PMax/rhoMax)
+    vMax = 2 * (csMax-cs0) / (gamma-1.0)
+
+    xL = X - (csMax + vMax)*t 
+    xR = X - cs0*t
+
+    while np.fabs(xR-xL).mean() > dx*TOL:
+        x = 0.5*(xL + xR)
+        rho = rhoProfile(x, x0, alpha, sigma, rho0)
+        P = P0 * np.power(rho/rho0, gamma)
+        cs = np.sqrt(gamma*P/rho)
+        v = 2*(cs - cs0) / (gamma-1.0)
+        xt = x + (v+cs)*t
+
+        over = xt > X
+        under = xt <= X
+        xR[over] = x[over]
+        xL[under] = x[under]
+
+    x = 0.5*(xL + xR)
+    rho = rhoProfile(x, x0, alpha, sigma, rho0)
+    P = P0 * np.power(rho/rho0, gamma)
+    cs = np.sqrt(gamma*P/rho)
+    v = 2*(cs - cs0) / (gamma-1.0)
+
+    return X, rho, v, P
+
+def riemann_f(p, rho, v, P, gamma, A, B, cs):
+    if p <= P:
+        f = 2*cs*(math.pow(p/P,(gamma-1)/(2*gamma))-1.0) / (gamma-1.0)
+        df = 2*cs*math.pow(p/P,-(gamma+1)/(2*gamma)) / (2*gamma*P)
+    else:
+        f = (p-P)*math.sqrt(A / (p+B))
+        df = (1.0 - 0.5*(p-P)/(p+B)) * math.sqrt(A / (p+B))
+    return f, df
+
 if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+    
+    a = -1.0
+    b = 1.0
+    x0 = 0.0
+    N = 1000
+    t = 0.3
 
     rhoL = 1.0
     PL = 1.0
@@ -132,36 +194,32 @@ if __name__ == "__main__":
     PR = 0.1
     vR = 0.0
     gamma = 1.4
-
-    X, rho, v, P = riemann(-1.0, 1.0, 0.0, 1000, 0.3, rhoL, vL, PL,
-                            rhoR, vR, PR, gamma)
-
-    import matplotlib.pyplot as plt
     
-    AL = 2.0/((gamma+1.0)*rhoL)
-    AR = 2.0/((gamma+1.0)*rhoR)
-    BL = (gamma-1.0) / (gamma+1.0) * PL
-    BR = (gamma-1.0) / (gamma+1.0) * PR
-    csL = math.sqrt(gamma*PL/rhoL)
-    csR = math.sqrt(gamma*PR/rhoR)
-    
-    fig1, ax1 = plt.subplots(2,1)
-    PP = np.logspace(-2,2,100)
-    FL = [riemann_f(p,rhoL, vL, PL, gamma, AL, BL, csL)[0] for p in PP]
-    dFL = [riemann_f(p,rhoL, vL, PL, gamma, AL, BL, csL)[1] for p in PP]
-    FR = [riemann_f(p,rhoR, vR, PR, gamma, AR, BR, csR)[0] for p in PP]
-    dFR = [riemann_f(p,rhoR, vR, PR, gamma, AR, BR, csR)[1] for p in PP]
-    ax1[0].plot(PP, FL)
-    ax1[0].plot(PP, FR)
-    ax1[1].plot(PP, dFL)
-    ax1[1].plot(PP, dFR)
-    ax1[0].set_xscale('log')
-    ax1[1].set_xscale('log')
+    X, rho, v, P = riemann(a, b, x0, N, t, rhoL, vL, PL, rhoR, vR, PR, gamma)
 
-    fig, ax = plt.subplots(3,1)
-    ax[0].plot(X, rho)
-    ax[1].plot(X, v)
-    ax[2].plot(X, P)
+    fig1, ax1 = plt.subplots(3,1)
+    ax1[0].plot(X, rho)
+    ax1[1].plot(X, v)
+    ax1[2].plot(X, P)
+
+    a = 0.0
+    b = 2.0
+    x0 = 0.5
+    sigma = 0.3
+    N = 1000
+    t = 0.7
+
+    rho0 = 1.0
+    P0 = 1.0
+    alpha = 0.1
+    gamma = 5.0/3.0
+    
+    X, rho, v, P = isentropicWave(a, b, N, t, x0, sigma, alpha, gamma, 
+                                    rho0, P0)
+    fig2, ax2 = plt.subplots(3,1)
+    ax2[0].plot(X, rho)
+    ax2[1].plot(X, v)
+    ax2[2].plot(X, P)
 
     plt.show()
 
