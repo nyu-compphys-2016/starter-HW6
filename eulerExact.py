@@ -36,8 +36,8 @@ def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma,
     u = 0.5*(vL+vR) + 0.5*(riemann_f(p, rhoR, vR, PR, gamma, AR, BR, csR)[0]
                 - riemann_f(p, rhoL, vL, PL, gamma, AL, BL, csL)[0])
 
-    X = a + ((b-a)/N) * (np.arange(N) + 0.5)
-    xi = (X-x0)/T
+    X = a + (b-a)/float(N) * (np.arange(N) + 0.5)
+    xi = (X-x0)/float(T)
 
     rho = np.empty(X.shape)
     v = np.empty(X.shape)
@@ -137,7 +137,7 @@ def isentropicWave(a, b, N, t, x0, sigma, alpha, gamma, rho0=1.0, P0=1.0,
         rho[pulse] += alpha*rho0*np.power(1-np.power((x[pulse]-x0)/sigma,2),2)
         return rho
 
-    cs0 = math.sqrt(gamma*P0/rho0)
+    cs0 = math.sqrt(gamma*P0/float(rho0))
 
     rhoMax = rho0*(1.0+alpha)
     PMax = P0*math.pow(rhoMax/rho0, gamma)
