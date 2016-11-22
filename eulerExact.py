@@ -37,7 +37,7 @@ def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma,
                 - riemann_f(p, rhoL, vL, PL, gamma, AL, BL, csL)[0])
 
     X = a + ((b-a)/N) * (np.arange(N) + 0.5)
-    xi = X/T
+    xi = (X-x0)/T
 
     rho = np.empty(X.shape)
     v = np.empty(X.shape)
@@ -190,8 +190,8 @@ if __name__ == "__main__":
     rhoL = 1.0
     PL = 1.0
     vL = 0.0
-    rhoR = 0.125
-    PR = 0.1
+    rhoR = 0.1
+    PR = 0.125
     vR = 0.0
     gamma = 1.4
     
