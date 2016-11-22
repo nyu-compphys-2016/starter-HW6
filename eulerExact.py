@@ -47,7 +47,7 @@ def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma,
         # Left Shock
         rhoLS = rhoL * (p/PL + (gamma-1.0)/(gamma+1.0)) / (
                 (gamma-1.0)/(gamma+1.0) * p/PL + 1.0)
-        SL = vL - csL*math.sqrt((gamma+1) * p/PL + (gamma-1)/(2*gamma))
+        SL = vL - csL*math.sqrt(((gamma+1) * p/PL + (gamma-1))/(2*gamma))
 
         iL = xi < SL
         iLS = (xi >= SL) * (xi < u)
@@ -84,7 +84,7 @@ def riemann(a, b, x0, N, T, rhoL, vL, PL, rhoR, vR, PR, gamma,
         # Right Shock
         rhoRS = rhoR * (p/PR + (gamma-1.0)/(gamma+1.0)) / (
                 (gamma-1.0)/(gamma+1.0) * p/PR + 1.0)
-        SR = vR + csR*math.sqrt((gamma+1) * p/PR + (gamma-1)/(2*gamma))
+        SR = vR + csR*math.sqrt(((gamma+1) * p/PR + (gamma-1))/(2*gamma))
 
         iR = xi >= SR
         iRS = (xi < SR) * (xi >= u)
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     b = 1.0
     x0 = 0.0
     N = 1000
-    t = 0.3
+    t = 0.25
 
     rhoL = 1.0
     PL = 1.0
