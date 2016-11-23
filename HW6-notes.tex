@@ -56,7 +56,7 @@ This is a special case of the $p$-norm, which is written:
 
 In a hydrodynamics code, you are solving for three functions $\rho$, $v$, and $P$. You can calculate the error for any one of them, or for a combination like the entropy $s = s(\rho, P)$.  
 
-How you compute the integral \eqref{eq:err} with your numerical data depends on your scheme.  For our hydrodynamics code, the grid is separated into $N_x$ cells of width $\Delta x = (b-a) / N_x$. The boundaries between cells are at $x_{i+1/2} = a+ i \Delta x$, where $i=0,\dots,N$.  The cell centres are at $x_i = a+ (i+1/2) \Delta x$, where $i=0, \dots, N-1$.The discrete fluid variables (e.g. $\rho$) are \emph{averages} over each cell:
+How you compute the integral \eqref{eq:err} with your numerical data depends on your scheme.  For our hydrodynamics code, the grid is separated into $N_x$ cells of width $\Delta x = (b-a) / N_x$. The boundaries between cells are at $x_{i-1/2} = a+ i \Delta x$, where $i=0,\dots,N$.  The cell centres are at $x_i = a+ (i+1/2) \Delta x$, where $i=0, \dots, N-1$.The discrete fluid variables (e.g. $\rho$) are \emph{averages} over each cell:
 
 \begin{equation}
 	\rho_i \equiv \frac{1}{\Delta x}\int_{x_{i-1/2}}^{x_{i+1/2}} \rho(x) \diff x  \ .
@@ -72,7 +72,7 @@ Then to the same order, we can calculate the integral \eqref{eq:err} using a cen
 \begin{equation}
 	L_1(\rho_{num}) = \Delta x \sum_{i=0}^{N-1} \left| \rho_i - \rho_{exact}\left(x_i\right)\right| \ .
 \end{equation}
-For a grid on $[0,1]$ with 10 zones, the cell centres are at $x_i = \{ 0.05, 0.15, \dots, 0.95\}$ and the interfaces at $x_{i+1/2} = \{0,0.1,\dots, 0.9, 1.0 \}$.
+For a grid on $[0,1]$ with 10 zones, the cell centres are at $x_i = \{ 0.05, 0.15, \dots, 0.95\}$ and the interfaces at $x_{i-1/2} = \{0,0.1,\dots, 0.9, 1.0 \}$.
 
 \section{Boundary Conditions}
 
